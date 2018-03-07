@@ -1,7 +1,9 @@
 package com.williamgdev.example.googleplaceapi;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -9,6 +11,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -23,6 +28,10 @@ import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceDetectionClient;
+import com.google.android.gms.location.places.PlacePhotoMetadata;
+import com.google.android.gms.location.places.PlacePhotoMetadataBuffer;
+import com.google.android.gms.location.places.PlacePhotoMetadataResponse;
+import com.google.android.gms.location.places.PlacePhotoResponse;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlacePicker;
@@ -35,6 +44,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 public class MainActivity extends AppCompatActivity implements
         OnMapReadyCallback,
@@ -115,6 +126,25 @@ public class MainActivity extends AppCompatActivity implements
         }
     };
 
+    private GoogleMap.OnMarkerClickListener markerListener = new GoogleMap.OnMarkerClickListener() {
+        @Override
+        public boolean onMarkerClick(Marker marker) {
+            final Dialog dialog = new Dialog(MainActivity.this);
+            dialog.setContentView(R.layout.market_info);
+            final ImageView image = dialog.findViewById(R.id.info_image);
+            TextView title = dialog.findViewById(R.id.info_title);
+            getPhotos(selectedPlace, new ApiListener<Bitmap>() {
+                        @Override
+                        public void onResult(Bitmap result) {
+                            image.setImageBitmap(result);
+                        }
+                    });
+            title.setText(marker.getTitle() + "\n" + marker.getPosition());
+            dialog.show();
+            return true;
+        }
+    };
+
     private void showText(String message) {
         Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
     }
@@ -134,6 +164,7 @@ public class MainActivity extends AppCompatActivity implements
             return;
         }
         mMap.setMyLocationEnabled(true);
+        mMap.setOnMarkerClickListener(markerListener);
     }
 
     @Override
@@ -196,5 +227,37 @@ public class MainActivity extends AppCompatActivity implements
         // Position the map's camera at the location of the marker.
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
+    }
+
+    private void getPhotos(Place place, final ApiListener<Bitmap> listener) {
+        final String placeId = place.getId();
+        final Task<PlacePhotoMetadataResponse> photoMetadataResponse = mGeoDataClient.getPlacePhotos(placeId);
+        photoMetadataResponse.addOnCompleteListener(new OnCompleteListener<PlacePhotoMetadataResponse>() {
+            @Override
+            public void onComplete(@NonNull Task<PlacePhotoMetadataResponse> task) {
+                // Get the list of photos.
+                PlacePhotoMetadataResponse photos = task.getResult();
+                // Get the PlacePhotoMetadataBuffer (metadata for all of the photos).
+                PlacePhotoMetadataBuffer photoMetadataBuffer = photos.getPhotoMetadata();
+                // Get the first photo in the list.
+                PlacePhotoMetadata photoMetadata = photoMetadataBuffer.get(0);
+                // Get the attribution text.
+                CharSequence attribution = photoMetadata.getAttributions();
+                // Get a full-size bitmap for the photo.
+                Task<PlacePhotoResponse> photoResponse = mGeoDataClient.getPhoto(photoMetadata);
+                photoResponse.addOnCompleteListener(new OnCompleteListener<PlacePhotoResponse>() {
+                    @Override
+                    public void onComplete(@NonNull Task<PlacePhotoResponse> task) {
+                        PlacePhotoResponse photo = task.getResult();
+                        Bitmap bitmap = photo.getBitmap();
+                        listener.onResult(bitmap);
+                    }
+                });
+            }
+        });
+    }
+
+    public interface ApiListener<T> {
+        void onResult(T result);
     }
 }
