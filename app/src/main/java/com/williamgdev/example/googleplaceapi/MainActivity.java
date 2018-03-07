@@ -6,7 +6,6 @@ import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,7 +15,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -24,7 +23,9 @@ import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceDetectionClient;
 import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements
     private Marker mCurrLocationMarker;
 
     int PLACE_PICKER_REQUEST = 1;
+    private Place selectedPlace;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +71,14 @@ public class MainActivity extends AppCompatActivity implements
                 .enableAutoManage(this, onConnectionFailListener)
                 .addConnectionCallbacks(this)
                 .build();
+
+        PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+
+        autocompleteFragment.setOnPlaceSelectedListener(placeSelectionListener);
+
+
+
         PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
 
         try {
@@ -78,6 +88,20 @@ public class MainActivity extends AppCompatActivity implements
             showText(e.getMessage());
         }
     }
+
+    private PlaceSelectionListener placeSelectionListener = new PlaceSelectionListener() {
+        @Override
+        public void onPlaceSelected(Place place) {
+            selectedPlace = place;
+            moveCameraToPlace(selectedPlace);
+        }
+
+        @Override
+        public void onError(Status status) {
+            // TODO: Handle the error.
+            showText("An error occurred: " + status);
+        }
+    };
 
     private GoogleApiClient.OnConnectionFailedListener onConnectionFailListener = new GoogleApiClient.OnConnectionFailedListener() {
         @Override
@@ -153,16 +177,19 @@ public class MainActivity extends AppCompatActivity implements
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PLACE_PICKER_REQUEST) {
             if (resultCode == RESULT_OK) {
-                Place place = PlacePicker.getPlace(data, this);
-                LatLng latLng = place.getLatLng();
-                mMap.addMarker(new MarkerOptions()
-                        .title(place.getName().toString())
-                        .position(latLng));
-
-                // Position the map's camera at the location of the marker.
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-                mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
+                selectedPlace = PlacePicker.getPlace(data, this);
+                moveCameraToPlace(selectedPlace);
             }
         }
+    }
+
+    private void moveCameraToPlace(Place place) {
+        LatLng latLng = place.getLatLng();
+        mMap.addMarker(new MarkerOptions()
+                .title(place.getName().toString())
+                .position(latLng));
+        // Position the map's camera at the location of the marker.
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
     }
 }
