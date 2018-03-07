@@ -19,6 +19,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceDetectionClient;
@@ -76,7 +77,11 @@ public class MainActivity extends AppCompatActivity implements
                 getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
 
         autocompleteFragment.setOnPlaceSelectedListener(placeSelectionListener);
-
+        // Filter Country
+        AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
+                .setCountry("CA")
+                .build();
+        autocompleteFragment.setFilter(typeFilter);
 
 
         PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
