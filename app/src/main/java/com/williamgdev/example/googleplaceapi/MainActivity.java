@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements
         autocompleteFragment.setOnPlaceSelectedListener(placeSelectionListener);
         // Filter Country
         AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
-                .setCountry("CA")
+                .setCountry("US")
                 .build();
         autocompleteFragment.setFilter(typeFilter);
 
@@ -165,6 +165,10 @@ public class MainActivity extends AppCompatActivity implements
         }
         mMap.setMyLocationEnabled(true);
         mMap.setOnMarkerClickListener(markerListener);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.getUiSettings().setAllGesturesEnabled(true);
+        mMap.getUiSettings().setIndoorLevelPickerEnabled(true);
+
     }
 
     @Override
