@@ -39,4 +39,5 @@ public class PlaceDetailsResponse {
         this.status = status;
     }
 
+    public enum STATUS { OK, UNKNOWN_ERROR, ZERO_RESULTS, OVER_QUERY_LIMIT, REQUEST_DENIED, INVALID_REQUEST, NOT_FOUND}
 }

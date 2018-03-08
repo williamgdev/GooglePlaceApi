@@ -54,6 +54,7 @@ public class GPAInteractor implements
     private Marker mCurrLocationMarker;
     private Place selectedPlace;
     private static final GPAInteractor ourInstance = new GPAInteractor();
+    private GoogleMap.OnMarkerClickListener markerListener;
 
     public static GPAInteractor getInstance() {
         return ourInstance;
@@ -108,7 +109,9 @@ public class GPAInteractor implements
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setAllGesturesEnabled(true);
         mMap.getUiSettings().setIndoorLevelPickerEnabled(true);
-
+        if (markerListener != null) {
+            mMap.setOnMarkerClickListener(markerListener);
+        }
     }
 
     @Override
@@ -209,7 +212,14 @@ public class GPAInteractor implements
     }
 
     public void setMarkerListener(GoogleMap.OnMarkerClickListener markerListener) {
-        mMap.setOnMarkerClickListener(markerListener);
+        if (mMap != null) {
+            mMap.setOnMarkerClickListener(markerListener);
+        }
+        this.markerListener = markerListener;
+    }
+
+    public String getSelectedPlaceId() {
+        return selectedPlace.getId();
     }
 
     public interface ApiListener<T> {

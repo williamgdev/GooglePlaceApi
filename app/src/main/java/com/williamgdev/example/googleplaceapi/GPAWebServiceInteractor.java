@@ -5,6 +5,9 @@ import android.content.Context;
 
 import com.williamgdev.example.googleplaceapi.dto.PlaceDetailsResponse;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -35,7 +38,10 @@ public class GPAWebServiceInteractor {
     }
 
     public void getPlaceDetails(String placeId, GPAWebServiceInteractorListener<PlaceDetailsResponse> listener) {
-        apiService.getPlaceDetails(placeId, WEB_SERVICE_API_KEY).enqueue(getPlaceDetailsCallBack(listener));
+        Map<String, String> data = new HashMap<>();
+        data.put("placeid", placeId);
+        data.put("key", WEB_SERVICE_API_KEY);
+        apiService.getPlaceDetails(data).enqueue(getPlaceDetailsCallBack(listener));
     }
 
     private Callback<PlaceDetailsResponse> getPlaceDetailsCallBack(final GPAWebServiceInteractorListener<PlaceDetailsResponse> listener) {
@@ -44,11 +50,14 @@ public class GPAWebServiceInteractor {
             public void onResponse(Call<PlaceDetailsResponse> call, Response<PlaceDetailsResponse> response) {
                 switch (response.code()) {
                     case GPAWebServiceInteractorListener.OK:
-                        listener.onSuccess(response.body());
+                        if (response.body() != null &&
+                            response.body().getStatus().equals(PlaceDetailsResponse.STATUS.OK.toString())) {
+                            listener.onSuccess(response.body());
+                            return;
+                        }
                         break;
-                    default:
-                        listener.onError(response.message());
                 }
+                listener.onError(response.message());
             }
 
             @Override

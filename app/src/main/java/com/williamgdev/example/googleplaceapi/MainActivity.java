@@ -5,7 +5,9 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,6 +21,7 @@ import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.Marker;
+import com.williamgdev.example.googleplaceapi.dto.PlaceDetailsResponse;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -84,13 +87,25 @@ public class MainActivity extends AppCompatActivity {
             dialog.setContentView(R.layout.market_info);
             final ImageView image = dialog.findViewById(R.id.info_image);
             TextView title = dialog.findViewById(R.id.info_title);
+            final RatingBar ratingBar = dialog.findViewById(R.id.ratingBar);
             gpaInteractor.getPhotos(new GPAInteractor.ApiListener<Bitmap>() {
                 @Override
                 public void onResult(Bitmap result) {
                     image.setImageBitmap(result);
                 }
             });
-            title.setText(marker.getTitle() + "\n" + marker.getPosition());
+            title.setText(marker.getTitle());
+            GPAWebServiceInteractor.getInstance(getApplicationContext()).getPlaceDetails(gpaInteractor.getSelectedPlaceId(), new GPAWebServiceInteractor.GPAWebServiceInteractorListener<PlaceDetailsResponse>() {
+                @Override
+                public void onSuccess(PlaceDetailsResponse result) {
+                    ratingBar.setNumStars(result.getResult().getRating().intValue());
+                }
+
+                @Override
+                public void onError(String text) {
+                    showText(text);
+                }
+            });
             dialog.show();
             return true;
         }
