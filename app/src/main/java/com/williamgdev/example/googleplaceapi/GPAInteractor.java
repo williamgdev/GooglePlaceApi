@@ -86,24 +86,6 @@ public class GPAInteractor implements
             activity.showText(connectionResult.getErrorMessage());
         }
     };
-    private GoogleMap.OnMarkerClickListener markerListener = new GoogleMap.OnMarkerClickListener() {
-        @Override
-        public boolean onMarkerClick(Marker marker) {
-            final Dialog dialog = new Dialog(activity);
-            dialog.setContentView(R.layout.market_info);
-            final ImageView image = dialog.findViewById(R.id.info_image);
-            TextView title = dialog.findViewById(R.id.info_title);
-            getPhotos(selectedPlace, new ApiListener<Bitmap>() {
-                @Override
-                public void onResult(Bitmap result) {
-                    image.setImageBitmap(result);
-                }
-            });
-            title.setText(marker.getTitle() + "\n" + marker.getPosition());
-            dialog.show();
-            return true;
-        }
-    };
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -123,7 +105,6 @@ public class GPAInteractor implements
             return;
         }
         mMap.setMyLocationEnabled(true);
-        mMap.setOnMarkerClickListener(markerListener);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setAllGesturesEnabled(true);
         mMap.getUiSettings().setIndoorLevelPickerEnabled(true);
@@ -185,6 +166,10 @@ public class GPAInteractor implements
         mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
     }
 
+    public void getPhotos(final ApiListener<Bitmap> listener) {
+        getPhotos(selectedPlace, listener);
+    }
+
     private void getPhotos(Place place, final ApiListener<Bitmap> listener) {
         final String placeId = place.getId();
         final Task<PlacePhotoMetadataResponse> photoMetadataResponse = mGeoDataClient.getPlacePhotos(placeId);
@@ -221,6 +206,10 @@ public class GPAInteractor implements
         return new AutocompleteFilter.Builder()
                 .setCountry(countryCode)
                 .build();
+    }
+
+    public void setMarkerListener(GoogleMap.OnMarkerClickListener markerListener) {
+        mMap.setOnMarkerClickListener(markerListener);
     }
 
     public interface ApiListener<T> {

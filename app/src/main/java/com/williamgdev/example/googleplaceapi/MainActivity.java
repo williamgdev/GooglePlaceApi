@@ -1,8 +1,12 @@
 package com.williamgdev.example.googleplaceapi;
 
+import android.app.Dialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -12,7 +16,9 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Marker;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         gpaInteractor = GPAInteractor.getInstance();
         gpaInteractor.initializeGoogleApi(this);
-
         launchMapFragment();
 
         launchPlacePicker();
@@ -53,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
         autocompleteFragment.setOnPlaceSelectedListener(placeSelectionListener);
         autocompleteFragment.setFilter(gpaInteractor.getFilterByCountry("US"));
+
+        gpaInteractor.setMarkerListener(markerListener);
     }
 
     private PlaceSelectionListener placeSelectionListener = new PlaceSelectionListener() {
@@ -69,6 +76,25 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
+    private GoogleMap.OnMarkerClickListener markerListener = new GoogleMap.OnMarkerClickListener() {
+        @Override
+        public boolean onMarkerClick(Marker marker) {
+            final Dialog dialog = new Dialog(MainActivity.this);
+            dialog.setContentView(R.layout.market_info);
+            final ImageView image = dialog.findViewById(R.id.info_image);
+            TextView title = dialog.findViewById(R.id.info_title);
+            gpaInteractor.getPhotos(new GPAInteractor.ApiListener<Bitmap>() {
+                @Override
+                public void onResult(Bitmap result) {
+                    image.setImageBitmap(result);
+                }
+            });
+            title.setText(marker.getTitle() + "\n" + marker.getPosition());
+            dialog.show();
+            return true;
+        }
+    };
 
     public void showText(String message) {
         Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
